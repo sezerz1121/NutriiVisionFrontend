@@ -108,6 +108,8 @@ function SignIn() {
         
                 
                 const response = await axios.post(`${import.meta.env.VITE_APIURL}/users/signin`, { email, password });
+                  localStorage.setItem("accessToken", response.data.data.accessToken);
+                  localStorage.setItem("refreshToken", response.data.data.refreshToken);
         
                 
                 
