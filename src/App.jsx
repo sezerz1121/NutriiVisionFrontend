@@ -6,7 +6,7 @@ import Home from './Home.jsx';
 function App() {
 
   return (
-<GoogleOAuthProvider clientId="312965199442-04avaq6m97j3pfsa5okv1np0vp4lqul7.apps.googleusercontent.com">
+<GoogleOAuthProvider clientId={`${import.meta.env.VITE_CLIENTID}`}>
 <Router>
       <Routes>
         <Route path="/" element={<SignIn/>} />
