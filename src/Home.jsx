@@ -64,12 +64,13 @@ function Home() {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('accessToken');
         if (!token) {
           console.error('Token not found in localStorage');
+          navigate('/');
           return;
         }
 
@@ -87,6 +88,10 @@ function Home() {
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
+        if (error.data.data === 'user does not exist') {
+          setUser(response.data.message.userId);
+          navigate('/');
+        }
       }
     };
 
