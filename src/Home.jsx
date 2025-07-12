@@ -135,7 +135,7 @@ function Home() {
 
       {isLoading && (
         <div className="Text-box" style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '18px', marginTop: '20px' }}>
-          ⏳ Scanning... Please wait.
+           Scanning... Please wait.
         </div>
       )}
 
