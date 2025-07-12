@@ -13,6 +13,7 @@ function Home() {
   const [isAnimating, setIsAnimating] = useState(false);
   const [imageFile, setImageFile] = useState(null);
   const [formattedText, setFormattedText] = useState("");
+  const [isLoading, setIsLoading] = useState(false); // New: loading state
   const [isActiveProfile, setIsActiveProfile] = useState(false);
 
   const animationSequence = {
@@ -29,42 +30,47 @@ function Home() {
 
   const handleFileDrop = (file) => {
     setImageFile(file);
+    setFormattedText(""); // Clear previous result when new image is dropped
   };
 
   const handleProfile = () => {
     setIsActiveProfile(!isActiveProfile);
-  }
+  };
 
   const handleClick = async () => {
     setIsAnimating(true);
     setTimeout(() => setIsAnimating(false), 600);
 
+    if (!imageFile || !userId) {
+      console.error('No image or user ID available for scanning.');
+      return;
+    }
+
     try {
-      if (imageFile && userId) {
-        const formData = new FormData();
-        formData.append('userId', userId);
-        formData.append('imageScan', imageFile);
+      setIsLoading(true); // Start loading
 
-        const response = await axios.post(`${import.meta.env.VITE_APIURL}/scanner/scan`, formData);
+      const formData = new FormData();
+      formData.append('userId', userId);
+      formData.append('imageScan', imageFile);
 
-        console.log('response:', response.data);
+      const response = await axios.post(`${import.meta.env.VITE_APIURL}/scanner/scan`, formData);
+      console.log('response:', response.data);
 
-        if (response.data.message === true) {
-          setImageFile(null);
-        }
+      if (response.data.message === true) {
+        setImageFile(null);
+      }
 
-        if (response.data.data) {
-          formatReceivedText(response.data.data); // Format the received text
-        }
-      } else {
-        console.error('No image or user ID available for scanning.');
+      if (response.data.data) {
+        formatReceivedText(response.data.data);
       }
     } catch (error) {
       console.error('Error scanning image:', error);
+    } finally {
+      setIsLoading(false); // End loading
     }
   };
 
-useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       try {
         const token = localStorage.getItem('accessToken');
@@ -75,12 +81,8 @@ useEffect(() => {
         }
 
         const response = await axios.post(`${import.meta.env.VITE_APIURL}/users/redirect`, {}, {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        console.log(response.data);
 
         if (response.data.data === 'user exist') {
           setUser(response.data.message.userId);
@@ -88,8 +90,7 @@ useEffect(() => {
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
-        if (error.data.data === 'user does not exist') {
-          setUser(response.data.message.userId);
+        if (error.data?.data === 'user does not exist') {
           navigate('/');
         }
       }
@@ -98,9 +99,7 @@ useEffect(() => {
     fetchData();
   }, [navigate]);
 
-  // Function to format the received text
   const formatReceivedText = (text) => {
-    // Replace **bold** with <strong>bold</strong>
     const formatted = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br />');
     setFormattedText(formatted);
   };
@@ -118,6 +117,7 @@ useEffect(() => {
           <RxHamburgerMenu />
         </div>
       </div>
+
       <div className='Imagesubmit'>
         <DragAndDropFileBox onFilesDrop={handleFileDrop} />
         <div className='Scanbutton' onClick={handleClick}>
@@ -132,21 +132,25 @@ useEffect(() => {
           />
         </div>
       </div>
-      { 
-        formattedText === "" ? null : (
-          <motion.div
-            className='Text-box'
-            dangerouslySetInnerHTML={{ __html: formattedText }} // Render HTML content safely
-            initial={{ opacity: 0, y: -20 }}  // Initial animation state
-            animate={{ opacity: 1, y: 0 }}    // Animation state
-            transition={{ duration: 0.5 }}   // Animation transition duration
-            style={{ fontSize: '16px' }}     // Example style
-          />
-        )
-      }
-      <div>
-        { isActiveProfile ? <Dropdown userId={userId} /> : "" }
-      </div>
+
+      {isLoading && (
+        <div className="Text-box" style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '18px', marginTop: '20px' }}>
+          ⏳ Scanning... Please wait.
+        </div>
+      )}
+
+      {!isLoading && formattedText !== "" && (
+        <motion.div
+          className='Text-box'
+          dangerouslySetInnerHTML={{ __html: formattedText }}
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          style={{ fontSize: '16px' }}
+        />
+      )}
+
+      {isActiveProfile && <Dropdown userId={userId} />}
     </div>
   );
 }
